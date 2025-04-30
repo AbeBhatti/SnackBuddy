@@ -1,2 +1,2 @@
-# snackBuddy
-SnackBuddy is designed for travelers and individuals with allergies. It allows you to scan snack barcodes or upload images to instantly check for allergens. The app supports multiple languages, making it easy to get allergen information wherever you are, helping you stay safe while traveling.
+# SnackBuddy
+SnackBuddy is a mobile app designed for travelers with food allergies. It helps you stay safe by scanning snack barcodes or images to detect allergens, even when ingredient labels aren't in English. By supporting multiple languages and translating ingredient information, SnackBuddy makes it easy to understand what's in your food, no matter where you are traveling. This takes the stress off of any trip and allows you to enjoy your favorite snacks around the world!
