@@ -7,11 +7,10 @@ from pyzbar.pyzbar import decode
 from PIL import Image
 from io import BytesIO
 import magic  
-import zxing  # Import Zxing library
+import zxing  
 
 app = FastAPI()
 
-# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,26 +19,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Response schema
 class AllergenDetails(BaseModel):
     name: str
 
 class AllergensResponse(BaseModel):
     allergens: List[AllergenDetails]
 
-# Check if the uploaded file is a valid image
 def is_valid_image(image_data: bytes) -> bool:
     mime = magic.Magic(mime=True)
     mime_type = mime.from_buffer(image_data)
     print(f"Detected MIME type: {mime_type}")
     return mime_type.startswith('image/')
 
-# Decode the barcode from the image using pyzbar, fallback to Zxing
 def decode_barcode(image_data: bytes) -> str:
     if not is_valid_image(image_data):
         raise HTTPException(status_code=400, detail="The uploaded file is not a valid image.")
     
-    # Try using pyzbar first
     try:
         image = Image.open(BytesIO(image_data))
         barcodes = decode(image)
@@ -50,7 +45,6 @@ def decode_barcode(image_data: bytes) -> str:
     except Exception as e:
         print(f"Error with pyzbar: {str(e)}")
     
-    # Fallback to Zxing if pyzbar fails
     try:
         reader = zxing.BarCodeReader()
         barcode = reader.decode(image_data)
@@ -63,7 +57,6 @@ def decode_barcode(image_data: bytes) -> str:
 
     raise HTTPException(status_code=400, detail="No barcode detected in the image.")
 
-# Retrieve product data from Open Food Facts
 def get_product_data(barcode_data: str):
     url = f"https://world.openfoodfacts.org/api/v0/product/{barcode_data}.json"
     print(f"Requesting data from Open Food Facts for barcode: {barcode_data}")
@@ -78,7 +71,6 @@ def get_product_data(barcode_data: str):
         print(f"Error during API request: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error retrieving product data: {str(e)}")
 
-# Check allergens against tags and fallback to raw text
 ALLERGEN_KEYWORDS = {
     "milk": ["milk", "milk powder", "whey", "casein", "lactose", "butter", "cheese", "cream", "yogurt"],
     "eggs": ["egg", "eggs", "albumen", "egg white", "egg yolk", "mayonnaise"],
@@ -103,11 +95,9 @@ def check_allergens(product_data: dict, user_allergens: List[str]) -> List[str]:
     for user_allergen in user_allergens:
         user_allergen = user_allergen.lower()
 
-        # Check direct match first
         if user_allergen in combined_text:
             found.add(user_allergen)
 
-        # Then use the keyword map
         if user_allergen in ALLERGEN_KEYWORDS:
             for keyword in ALLERGEN_KEYWORDS[user_allergen]:
                 if keyword.lower() in combined_text:
@@ -117,7 +107,6 @@ def check_allergens(product_data: dict, user_allergens: List[str]) -> List[str]:
     print(f"Matched allergens: {found}")
     return list(found)
 
-# Upload route for barcode scanning
 @app.post("/upload", response_model=AllergensResponse)
 async def upload_image(
     image: UploadFile = File(...),
